@@ -1,9 +1,6 @@
 import numpy as np
 
-ket_0 = np.array([1, 0])
-ket_1 = np.array([0, 1])
-ket_plus  = (1 / np.sqrt(2)) * (ket_0 + ket_1)
-ket_minus = (1 / np.sqrt(2)) * (ket_0 - ket_1)
+from .globals import ket_0, ket_1, ket_plus, ket_minus
 
 class Channel:
     def __init__(self, sender, receiver, eavesdropper=None, flip_probability=0.0, loss_probability=0.0):
