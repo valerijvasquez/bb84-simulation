@@ -49,17 +49,18 @@ class BB84Simulation:
             self.hashed_key = hashlib.sha256(bitstring.encode()).hexdigest()
 
     def show_results(self):
-        print(\"Alice bits:       \", self.alice.bits)
-        print(\"Alice bases:      \", self.alice.bases)
-        if self.eve:
-            print(\"Eve bases:        \", self.eve.bases)
-            print(\"Eve bits:         \", self.eve.intercepted_bits)
-        print(\"Bob bases:        \", self.bob.bases)
-        print(\"Bob measurements: \", self.bob.measured_bits)
-        print(\"Matching bases:   \", self.alice.bases == self.bob.bases)
-        print(\"Reconciled key:   \", self.shared_key)
-        print(\"Error rate:       \", \"N/A\" if self.error_rate is None else f\"{round(self.error_rate * 100, 2)}%\")
-        print(f\"Channel lost qubits: {self.channel.loss_count}\")
-        print(f\"Channel flipped qubits: {self.channel.flip_count}\")
-        if self.hashed_key:
-            print(\"Final hashed key (SHA-256):\", self.hashed_key)
+       print("Alice bits:       ", self.alice.bits)
+       print("Alice bases:      ", self.alice.bases)
+       if self.eve:
+           print("Eve bases:        ", self.eve.bases)
+           print("Eve bits:         ", self.eve.intercepted_bits)
+       print("Bob bases:        ", self.bob.bases)
+       print("Bob measurements: ", self.bob.measured_bits)
+       print("Matching bases:   ", self.alice.bases == self.bob.bases)
+       print("Reconciled key:   ", self.shared_key)
+       print("Error rate:       ", "N/A" if self.error_rate is None else f"{round(self.error_rate * 100, 2)}%")
+       print(f"Channel lost qubits: {self.channel.loss_count}")
+       print(f"Channel flipped qubits: {self.channel.flip_count}")
+       if self.hashed_key:
+           print("Final hashed key (SHA-256):", self.hashed_key)
+
