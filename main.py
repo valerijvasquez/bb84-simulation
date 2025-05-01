@@ -1,4 +1,5 @@
 from bb84.simulation import BB84Simulation
+from bb84.messenger import Messenger
 
 def main():
     print("\n--- BB84 Quantum Key Distribution Simulation ---")
@@ -31,6 +32,16 @@ def main():
 
         sim.run()
         sim.show_results()
+
+        # ✅ Corrected key check (shared_key / hashed_key)
+        key_available = sim.hashed_key if sim.hashed_key else sim.shared_key
+        if key_available is not None:
+            use_message = input("\nDo you want to send a message using the final key? (y/n): ").strip().lower()
+            if use_message == 'y':
+                messenger = Messenger(key_available)
+                messenger.send_message()
+            else:
+                print("Message transmission aborted.")
 
         if sim.error_rate is not None and sim.error_rate > error_threshold:
             print(f"\n⚠️  ERROR RATE TOO HIGH ({round(sim.error_rate * 100, 2)}%) > THRESHOLD ({error_threshold * 100}%)")
