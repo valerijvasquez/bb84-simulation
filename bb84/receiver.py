@@ -23,11 +23,12 @@ class QubitReceiver:
                 self.measured_bits.append(None)
                 continue
             basis = self.bases[i]
-            if basis == 'x':
+            if basis == '+':
                 bit = 0 if np.allclose(received_state, ket_0) else 1
-            else:
+            else:  # 'x' basis
                 bit = 0 if np.allclose(received_state, ket_plus) else 1
             self.measured_bits.append(bit)
+
 
     def reconcile_with(self, alice_bases):
         matching_indices = np.where(self.bases == alice_bases)[0]
