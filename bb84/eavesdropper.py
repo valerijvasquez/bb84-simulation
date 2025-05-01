@@ -1,36 +1,37 @@
+import random
 import numpy as np
-
-from .globals import ket_0, ket_1, ket_plus, ket_minus, bits, bases
+from .globals import ket_0, ket_1, ket_plus, ket_minus, bases
 
 class Eavesdropper:
-    def __init__(self, interception_fraction=1.0):
-        self.interception_fraction = interception_fraction
-        self.bases = None
-        self.intercepted_bits = None
+    def __init__(self, intercept_fraction=1.0):
+        self.intercept_fraction = intercept_fraction
+        self.intercepted_positions = set()
+        self.bases = {}
+        self.intercepted_bits = {}
 
-    def intercept(self, encoded_qubits):
-        total = len(encoded_qubits)
-        num_to_intercept = int(total * self.interception_fraction)
-        indices_to_intercept = np.random.choice(total, num_to_intercept, replace=False)
+    def should_intercept(self, position):
+        if random.random() < self.intercept_fraction:
+            self.intercepted_positions.add(position)
+            return True
+        return False
 
-        measured_bits = []
-        measured_bases = []
+    def intercept(self, state, position=None):
+        basis = random.choice(bases)
+        if position is not None:
+            self.bases[position] = basis
+        measured_bit = self.measure(state, basis)
+        if position is not None:
+            self.intercepted_bits[position] = measured_bit
+        return self.encode(measured_bit, basis)
 
-        for i, (state, alice_basis) in enumerate(encoded_qubits):
-            if i in indices_to_intercept:
-                eve_basis = np.random.choice(bases)
-                if eve_basis == alice_basis:
-                    bit = 0 if np.allclose(state, ket_0) or np.allclose(state, ket_plus) else 1
-                else:
-                    bit = np.random.choice(bits)
-            else:
-                eve_basis = alice_basis
-                bit = 0 if np.allclose(state, ket_0) or np.allclose(state, ket_plus) else 1
+    def measure(self, state, basis):
+        if basis == 'x':
+            return 0 if np.allclose(state, ket_0) or np.allclose(state, ket_plus) else 1
+        else:
+            return 0 if np.allclose(state, ket_0) or np.allclose(state, ket_1) else 1
 
-            measured_bases.append(eve_basis)
-            measured_bits.append(bit)
-
-        self.bases = np.array(measured_bases)
-        self.intercepted_bits = np.array(measured_bits)
-
-        return list(zip([ket_0 if b == 0 else ket_1 for b in measured_bits], measured_bases))
+    def encode(self, bit, basis):
+        if basis == 'x':
+            return ket_0 if bit == 0 else ket_1
+        else:
+            return ket_plus if bit == 0 else ket_minus

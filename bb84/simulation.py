@@ -39,13 +39,19 @@ class BB84Simulation:
             loss_probability=self.loss_probability,
             eavesdropper=self.eve
         )
-        self.quantum_channel.transmit(self.alice.encoded_qubits, self.bob)
+
+        transmitted_states = []
+        for i, (state, _) in enumerate(self.alice.encoded_qubits):
+            transmitted = self.quantum_channel.transmit(state, i)
+            transmitted_states.append(transmitted)
+
+        self.bob.receive_qubits(transmitted_states)
 
         self.classical_channel = ClassicalChannel(self.alice, self.bob)
         self.shared_key = self.classical_channel.reconcile()
         self.error_rate = self.classical_channel.calculate_error_rate()
 
-        if self.use_hashing:
+        if self.use_hashing and self.shared_key is not None:
             bitstring = ''.join(map(str, self.shared_key))
             self.hashed_key = hashlib.sha256(bitstring.encode()).hexdigest()
 
@@ -57,12 +63,10 @@ class BB84Simulation:
             print("Eve bits:         ", self.eve.intercepted_bits)
         print("Bob bases:        ", self.bob.bases)
         print("Bob measurements: ", self.bob.measured_bits)
-        print("Matching bases:   ", self.alice.bases == self.bob.bases)
         print("Reconciled key:   ", self.shared_key)
         print("Error rate:       ", "N/A" if self.error_rate is None else f"{round(self.error_rate * 100, 2)}%")
         print(f"Channel lost qubits: {self.quantum_channel.loss_count}")
         print(f"Channel flipped qubits: {self.quantum_channel.flip_count}")
         if self.hashed_key:
             print("Final hashed key (SHA-256):", self.hashed_key)
-
 

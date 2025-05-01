@@ -3,6 +3,14 @@ import numpy as np
 from .globals import ket_0, ket_1, ket_plus, ket_minus, bits, bases
 
 class QubitSender:
+    def encode_single_qubit(self, index):
+        bit = self.bits[index]
+        basis = self.bases[index]
+        if basis == 'Z':
+            return ket_0 if bit == 0 else ket_1
+        else:
+            return ket_plus if bit == 0 else ket_minus
+
     def __init__(self, key_length):
         self.key_length = key_length
         self.bits = None
