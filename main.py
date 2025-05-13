@@ -1,3 +1,13 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon May 12 12:19:39 2025
+
+@author: valerijvasquez
+"""
+
+
+
 from bb84.simulation import BB84Simulation
 from bb84.messenger import Messenger
 
@@ -33,7 +43,19 @@ def main():
         sim.run()
         sim.show_results()
 
-        # ✅ Corrected key check (shared_key / hashed_key)
+        # Abort early if error too high
+        if sim.error_rate is not None and sim.error_rate > error_threshold:
+            print(f"\n⚠️  ERROR RATE TOO HIGH ({round(sim.error_rate * 100, 2)}%) > THRESHOLD ({error_threshold * 100}%)")
+            retry = input("Do you want to try a new channel? (y/n): ").strip().lower()
+            if retry != 'y':
+                print("Aborting simulation.")
+                break
+            else:
+                continue  # restart loop with new run
+        else:
+            print("\n✅ Simulation successful and within error threshold.")
+
+        # Only allow message transmission if key is valid and error acceptable
         key_available = sim.hashed_key if sim.hashed_key else sim.shared_key
         if key_available is not None:
             use_message = input("\nDo you want to send a message using the final key? (y/n): ").strip().lower()
@@ -43,15 +65,7 @@ def main():
             else:
                 print("Message transmission aborted.")
 
-        if sim.error_rate is not None and sim.error_rate > error_threshold:
-            print(f"\n⚠️  ERROR RATE TOO HIGH ({round(sim.error_rate * 100, 2)}%) > THRESHOLD ({error_threshold * 100}%)")
-            retry = input("Do you want to try a new channel? (y/n): ").strip().lower()
-            if retry != 'y':
-                print("Aborting simulation.")
-                break
-        else:
-            print("\n✅ Simulation successful and within error threshold.")
-            break
+        break  # simulation complete
 
 if __name__ == "__main__":
     main()
