@@ -6,16 +6,24 @@ Created on Mon May 12 12:19:39 2025
 @author: valerijvasquez
 """
 
-
-
 from bb84.simulation import BB84Simulation
 from bb84.messenger import Messenger
 
 def main():
     print("\n--- BB84 Quantum Key Distribution Simulation ---")
 
-    key_length = int(input("How many qubits to send? "))
+    # Step 1: Enter message first
+    message = input("Enter the message to send: ").strip()
+    message_bytes = message.encode('utf-8')
+    required_key_bits = len(message_bytes) * 8
+    print(f"Message requires {required_key_bits} bits of key for one-time pad encryption.")
 
+    # Step 2: Estimate how many qubits to send
+    estimated_efficiency = 0.25
+    key_length = int(required_key_bits / estimated_efficiency)
+    print(f"Estimated number of qubits to send: {key_length}")
+
+    # Step 3: Get simulation settings
     use_eve_input = input("Include eavesdropping? (y/n): ").strip().lower()
     use_eve = use_eve_input == 'y'
     eve_fraction = 0.0
@@ -43,7 +51,6 @@ def main():
         sim.run()
         sim.show_results()
 
-        # Abort early if error too high
         if sim.error_rate is not None and sim.error_rate > error_threshold:
             print(f"\n⚠️  ERROR RATE TOO HIGH ({round(sim.error_rate * 100, 2)}%) > THRESHOLD ({error_threshold * 100}%)")
             retry = input("Do you want to try a new channel? (y/n): ").strip().lower()
@@ -51,21 +58,21 @@ def main():
                 print("Aborting simulation.")
                 break
             else:
-                continue  # restart loop with new run
+                continue
         else:
             print("\n✅ Simulation successful and within error threshold.")
 
-        # Only allow message transmission if key is valid and error acceptable
         key_available = sim.hashed_key if sim.hashed_key else sim.shared_key
-        if key_available is not None:
-            use_message = input("\nDo you want to send a message using the final key? (y/n): ").strip().lower()
+        if key_available is not None and len(key_available) >= required_key_bits:
+            use_message = input("\nDo you want to send the message using the final key? (y/n): ").strip().lower()
             if use_message == 'y':
-                messenger = Messenger(key_available)
-                messenger.send_message()
+                messenger = Messenger(key_available[:required_key_bits])
+                messenger.send_message_with_message(message)
             else:
                 print("Message transmission aborted.")
-
-        break  # simulation complete
+        else:
+            print("Error: Final key too short for encryption.")
+        break
 
 if __name__ == "__main__":
     main()
