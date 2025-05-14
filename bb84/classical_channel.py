@@ -4,7 +4,6 @@ class ClassicalChannel:
         self.bob = bob
         self.shared_key = None
         self.error_rate = None
-
     
     def reconcile(self):
         alice_key = []
@@ -19,3 +18,6 @@ class ClassicalChannel:
     def calculate_error_rate(self):
         self.error_rate = self.bob.error_rate(self.alice.bits, self.alice.bases)
         return self.error_rate
+
+    def send_sample_indices(self, indices):
+        self.bob.receive_sample_indices(indices)

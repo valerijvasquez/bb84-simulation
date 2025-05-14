@@ -49,7 +49,7 @@ class BB84Simulation:
 
         self.classical_channel = ClassicalChannel(self.alice, self.bob)
         self.shared_key = self.classical_channel.reconcile()
-        self.error_rate = self.classical_channel.calculate_error_rate()
+        
 
         if self.use_hashing and self.shared_key is not None:
             bitstring = ''.join(map(str, self.shared_key))
@@ -64,9 +64,27 @@ class BB84Simulation:
         print("Bob bases:        ", self.bob.bases)
         print("Bob measurements: ", self.bob.measured_bits)
         print("Reconciled key:   ", self.shared_key)
-        print("Error rate:       ", "N/A" if self.error_rate is None else f"{round(self.error_rate * 100, 2)}%")
+        #print("Error rate:       ", "N/A" if self.error_rate is None else f"{round(self.error_rate * 100, 2)}%")
         print(f"Channel lost qubits: {self.quantum_channel.loss_count}")
         print(f"Channel flipped qubits: {self.quantum_channel.flip_count}")
         if self.hashed_key:
             print("Final hashed key (SHA-256):", self.hashed_key)
 
+
+    
+    
+    def estimate_error_from_sample(self, fraction=0.2):
+        key_length = len(self.classical_channel.bob_key)
+        indices = self.alice.choose_sample_indices(key_length, fraction)
+        self.classical_channel.send_sample_indices(indices)
+
+        self.error_rate = self.bob.compare_sample(
+            bob_key=self.classical_channel.bob_key,
+            alice_key=self.shared_key
+        )
+
+        self.shared_key = [bit for i, bit in enumerate(self.shared_key) if i not in indices]
+
+        print(f"Used {len(indices)} bits ({round(100 * fraction, 1)}%) of key for error estimation.")
+        print(f"Remaining key length after discarding sample: {len(self.shared_key)} bits")
+        print(f"Sampled error rate: {round(self.error_rate * 100, 2)}%")

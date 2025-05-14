@@ -1,5 +1,4 @@
 import numpy as np
-
 from .globals import ket_0, ket_1, ket_plus, ket_minus, bits, bases
 
 class QubitSender:
@@ -15,6 +14,7 @@ class QubitSender:
         self.key_length = key_length
         self.bits = None
         self.bases = None
+        self.sample_indices = []
 
     def prepare_qubits(self):
         self.bits = np.random.choice(bits, self.key_length)
@@ -30,3 +30,7 @@ class QubitSender:
             states.append((state, basis))
         self.encoded_qubits = states
 
+    def choose_sample_indices(self, key_length, fraction=0.2):
+        indices = sorted(np.random.choice(key_length, int(fraction * key_length), replace=False))
+        self.sample_indices = indices
+        return indices

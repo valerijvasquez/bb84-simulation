@@ -8,6 +8,7 @@ class QubitReceiver:
         self.received_states = None
         self.measured_bits = None
         self.reconciled_key = None
+        self.sample_indices = []
 
     def choose_bases(self):
         self.bases = np.random.choice(bases, size=self.key_length)
@@ -25,10 +26,9 @@ class QubitReceiver:
             basis = self.bases[i]
             if basis == '+':
                 bit = 0 if np.allclose(received_state, ket_0) else 1
-            else:  # 'x' basis
+            else:
                 bit = 0 if np.allclose(received_state, ket_plus) else 1
             self.measured_bits.append(bit)
-
 
     def reconcile_with(self, alice_bases):
         matching_indices = np.where(self.bases == alice_bases)[0]
@@ -46,3 +46,12 @@ class QubitReceiver:
         bob_key = bob_key[valid]
         errors = np.sum(alice_key != bob_key)
         return errors / len(valid)
+
+    def receive_sample_indices(self, indices):
+        self.sample_indices = indices
+
+    def compare_sample(self, bob_key, alice_key):
+        sample_a = [alice_key[i] for i in self.sample_indices]
+        sample_b = [bob_key[i] for i in self.sample_indices]
+        errors = sum(a != b for a, b in zip(sample_a, sample_b))
+        return errors / len(self.sample_indices)
