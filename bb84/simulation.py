@@ -9,11 +9,10 @@ from .eavesdropper import Eavesdropper
 
 class BB84Simulation:
     def __init__(self, key_length=20, use_eve=False, eve_fraction=1.0,
-                 use_hashing=False, flip_probability=0.0, loss_probability=0.0):
+                 flip_probability=0.0, loss_probability=0.0):
         self.key_length = key_length
         self.use_eve = use_eve
         self.eve_fraction = eve_fraction
-        self.use_hashing = use_hashing
         self.flip_probability = flip_probability
         self.loss_probability = loss_probability
         self.alice = None
@@ -23,7 +22,6 @@ class BB84Simulation:
         self.classical_channel = None
         self.shared_key = None
         self.error_rate = None
-        self.hashed_key = None
 
     def run(self):
         self.alice = QubitSender(self.key_length)
@@ -51,9 +49,7 @@ class BB84Simulation:
         self.shared_key = self.classical_channel.reconcile()
         
 
-        if self.use_hashing and self.shared_key is not None:
-            bitstring = ''.join(map(str, self.shared_key))
-            self.hashed_key = hashlib.sha256(bitstring.encode()).hexdigest()
+        
 
     def show_results(self):
         print("Alice bits:       ", self.alice.bits)
@@ -67,8 +63,7 @@ class BB84Simulation:
         #print("Error rate:       ", "N/A" if self.error_rate is None else f"{round(self.error_rate * 100, 2)}%")
         print(f"Channel lost qubits: {self.quantum_channel.loss_count}")
         print(f"Channel flipped qubits: {self.quantum_channel.flip_count}")
-        if self.hashed_key:
-            print("Final hashed key (SHA-256):", self.hashed_key)
+        
 
 
     

@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue May 13 22:24:04 2025
+Created on Wed May 14 11:37:09 2025
 
 @author: valerijvasquez
 """
-import os
-os.chdir('/Users/valerijvasquez/Documents/bb84-simulation')
-
-
-
 
 from bb84.simulation import BB84Simulation
 from bb84.messenger import Messenger
@@ -38,9 +33,6 @@ def main():
     flip_probability = float(input("Bit flip probability (0.0 to 1.0): "))
     loss_probability = float(input("Qubit loss probability (0.0 to 1.0): "))
 
-    use_hashing_input = input("Use SHA-256 hashing for privacy amplification? (y/n): ").strip().lower()
-    use_hashing = use_hashing_input == 'y'
-
     error_threshold = float(input("Set error rate threshold for accepting the key (e.g., 0.1): "))
 
     while True:
@@ -48,7 +40,6 @@ def main():
             key_length=key_length,
             use_eve=use_eve,
             eve_fraction=eve_fraction,
-            use_hashing=use_hashing,
             flip_probability=flip_probability,
             loss_probability=loss_probability
         )
@@ -70,11 +61,10 @@ def main():
         else:
             print("\n✅ Simulation successful and within error threshold.")
 
-        key_available = sim.hashed_key if sim.hashed_key else sim.shared_key
-        if key_available is not None and len(key_available) >= required_key_bits:
+        if sim.shared_key is not None and len(sim.shared_key) >= required_key_bits:
             use_message = input("\nDo you want to send the message using the final key? (y/n): ").strip().lower()
             if use_message == 'y':
-                messenger = Messenger(key_available[:required_key_bits])
+                messenger = Messenger(sim.shared_key[:required_key_bits])
                 messenger.send_message_with_message(message)
             else:
                 print("Message transmission aborted.")
@@ -84,3 +74,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
