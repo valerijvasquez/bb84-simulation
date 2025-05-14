@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon May 12 12:19:39 2025
+Created on Tue May 13 22:24:04 2025
 
 @author: valerijvasquez
 """
+import os
+os.chdir('/Users/valerijvasquez/Documents/bb84-simulation')
+
+
+
 
 from bb84.simulation import BB84Simulation
 from bb84.messenger import Messenger
@@ -49,7 +54,10 @@ def main():
         )
 
         sim.run()
+        
         sim.show_results()
+        
+        sim.estimate_error_from_sample()
 
         if sim.error_rate is not None and sim.error_rate > error_threshold:
             print(f"\n⚠️  ERROR RATE TOO HIGH ({round(sim.error_rate * 100, 2)}%) > THRESHOLD ({error_threshold * 100}%)")
