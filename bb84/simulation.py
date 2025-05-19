@@ -6,6 +6,7 @@ from .receiver import QubitReceiver
 from .quantum_channel import QuantumChannel
 from .classical_channel import ClassicalChannel
 from .eavesdropper import Eavesdropper
+from .ecc import ErrorCorrector
 
 class BB84Simulation:
     def __init__(self, key_length=20, use_eve=False, eve_fraction=1.0,
@@ -22,6 +23,7 @@ class BB84Simulation:
         self.classical_channel = None
         self.shared_key = None
         self.error_rate = None
+        self.sample_indices = None
 
     def run(self):
         self.alice = QubitSender(self.key_length)
@@ -47,11 +49,25 @@ class BB84Simulation:
 
         self.classical_channel = ClassicalChannel(self.alice, self.bob)
         self.shared_key = self.classical_channel.reconcile()
-        
 
-        
+    def estimate_error_from_sample(self, fraction=0.2):
+        key_length = len(self.classical_channel.bob_key)
+        indices = self.alice.choose_sample_indices(key_length, fraction)
+        self.classical_channel.send_sample_indices(indices)
+        self.sample_indices = indices
+
+        self.error_rate = self.bob.compare_sample(
+            bob_key=self.classical_channel.bob_key,
+            alice_key=self.shared_key
+        )
+
+        # Discard sample bits from keys
+        self.shared_key = [bit for i, bit in enumerate(self.shared_key) if i not in indices]
+        self.classical_channel.bob_key = [bit for i, bit in enumerate(self.classical_channel.bob_key) if i not in indices]
 
     def show_results(self):
+        print("\n=== RESULTS ===")
+        # 1. Bits and bases
         print("Alice bits:       ", self.alice.bits)
         print("Alice bases:      ", self.alice.bases)
         if self.eve:
@@ -60,26 +76,33 @@ class BB84Simulation:
         print("Bob bases:        ", self.bob.bases)
         print("Bob measurements: ", self.bob.measured_bits)
         print("Reconciled key:   ", self.shared_key)
-        #print("Error rate:       ", "N/A" if self.error_rate is None else f"{round(self.error_rate * 100, 2)}%")
         print(f"Channel lost qubits: {self.quantum_channel.loss_count}")
         print(f"Channel flipped qubits: {self.quantum_channel.flip_count}")
-        
+
+        # 2. Error estimation
+        if self.sample_indices is not None:
+            print("\n=== ERROR ESTIMATION ===")
+            print(f"Used {len(self.sample_indices)} bits ({round(100 * len(self.sample_indices) / (len(self.shared_key) + len(self.sample_indices)), 1)}%) of key for error estimation.")
+            print(f"Remaining key length after discarding sample: {len(self.shared_key)} bits")
+            print(f"Sampled error rate: {round(self.error_rate * 100, 2)}%")
+
+        # 3. ECC Section
+        ec = ErrorCorrector()
+        print("\n=== ERROR CORRECTION ===")
+        adjusted_length = len(self.shared_key) - (len(self.shared_key) % 3)
+        print(f"Adjusted key length to multiple of 3: {adjusted_length}")
+        print("Alice sifted key (trunc):     ", self.shared_key[:30])
+        print("Bob sifted key (trunc):       ", self.classical_channel.bob_key[:30])
+        corrected = ec.correct(self.shared_key[:adjusted_length], self.classical_channel.bob_key[:adjusted_length])
+        print("Corrected Bob key (trunc):    ", corrected[:30])
+
+        alice_hash = hashlib.sha256(bytes(self.shared_key[:adjusted_length])).hexdigest()[:12]
+        bob_hash = hashlib.sha256(bytes(corrected)).hexdigest()[:12]
+        print(f"Hash (Alice): {alice_hash}")
+        print(f"Hash (Corrected Bob): {bob_hash}")
+        if alice_hash == bob_hash:
+            print("✅ ECC SUCCESS: keys match.")
+        else:
+            print("❌ ECC FAILED: keys differ.")
 
 
-    
-    
-    def estimate_error_from_sample(self, fraction=0.2):
-        key_length = len(self.classical_channel.bob_key)
-        indices = self.alice.choose_sample_indices(key_length, fraction)
-        self.classical_channel.send_sample_indices(indices)
-
-        self.error_rate = self.bob.compare_sample(
-            bob_key=self.classical_channel.bob_key,
-            alice_key=self.shared_key
-        )
-
-        self.shared_key = [bit for i, bit in enumerate(self.shared_key) if i not in indices]
-
-        print(f"Used {len(indices)} bits ({round(100 * fraction, 1)}%) of key for error estimation.")
-        print(f"Remaining key length after discarding sample: {len(self.shared_key)} bits")
-        print(f"Sampled error rate: {round(self.error_rate * 100, 2)}%")

@@ -46,9 +46,11 @@ def main():
 
         sim.run()
         
+        sim.estimate_error_from_sample()
+        
         sim.show_results()
         
-        sim.estimate_error_from_sample()
+        
 
         if sim.error_rate is not None and sim.error_rate > error_threshold:
             print(f"\n⚠️  ERROR RATE TOO HIGH ({round(sim.error_rate * 100, 2)}%) > THRESHOLD ({error_threshold * 100}%)")

@@ -15,6 +15,7 @@ class QubitSender:
         self.bits = None
         self.bases = None
         self.sample_indices = []
+        self.reconciled_key = None
 
     def prepare_qubits(self):
         self.bits = np.random.choice(bits, self.key_length)

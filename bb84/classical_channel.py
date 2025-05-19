@@ -4,7 +4,7 @@ class ClassicalChannel:
         self.bob = bob
         self.shared_key = None
         self.error_rate = None
-    
+
     def reconcile(self):
         alice_key = []
         bob_key = []
@@ -12,7 +12,11 @@ class ClassicalChannel:
             if a_base == b_base and b_bit is not None:
                 alice_key.append(a_bit)
                 bob_key.append(b_bit)
-        self.bob_key = bob_key  # store for error rate calculation
+
+        self.bob_key = bob_key
+        self.alice.reconciled_key = alice_key
+        self.bob.reconciled_key = bob_key
+
         return alice_key
 
     def calculate_error_rate(self):
