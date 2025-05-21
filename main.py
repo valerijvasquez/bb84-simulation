@@ -43,6 +43,8 @@ def main():
             flip_probability=flip_probability,
             loss_probability=loss_probability
         )
+        
+        sim.message = message
 
         sim.run()
         

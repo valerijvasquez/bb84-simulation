@@ -100,9 +100,43 @@ class BB84Simulation:
         bob_hash = hashlib.sha256(bytes(corrected)).hexdigest()[:12]
         print(f"Hash (Alice): {alice_hash}")
         print(f"Hash (Corrected Bob): {bob_hash}")
+        
         if alice_hash == bob_hash:
             print("✅ ECC SUCCESS: keys match.")
+
+            # Privacy Amplification
+            from .privacy_amplification import PrivacyAmplifier
+
+            print("\n=== PRIVACY AMPLIFICATION ===")
+            if hasattr(self, 'message') and self.message:
+                required_bits = len(self.message.encode()) * 8
+                print(f"Message requires {required_bits} bits for OTP encryption.")
+            else:
+                required_bits = 40
+                print("No message found. Defaulting to 40-bit final key.")
+
+            amplifier = PrivacyAmplifier(output_bits=required_bits)
+            final_key = amplifier.apply(corrected)
+            amplifier = PrivacyAmplifier(output_bits=required_bits)
+            final_key = amplifier.apply(corrected)
+
+            shake = hashlib.shake_256()
+            padded_len = ((len(corrected) + 7) // 8) * 8
+            padded_bits = corrected + [0] * (padded_len - len(corrected))
+            bitstring = ''.join(str(b) for b in padded_bits)
+            key_bytes = int(bitstring, 2).to_bytes(padded_len // 8, byteorder='big')
+            shake.update(amplifier.seed + key_bytes)
+            digest = shake.digest(amplifier.output_bytes)
+            digest_bits = ''.join(f"{byte:08b}" for byte in digest)
+
+            print(f"Hash function used: SHAKE-256")
+            print(f"Seed used (hex): {amplifier.seed.hex()}")
+            print("Hashed key (hex):", digest.hex())
+            print(f"Hashed key (binary, {required_bits} bits):", final_key)
+
+
         else:
             print("❌ ECC FAILED: keys differ.")
+
 
 
