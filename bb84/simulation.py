@@ -91,10 +91,10 @@ class BB84Simulation:
         print("\n=== ERROR CORRECTION ===")
         adjusted_length = len(self.shared_key) - (len(self.shared_key) % 3)
         print(f"Adjusted key length to multiple of 3: {adjusted_length}")
-        print("Alice sifted key (trunc):     ", self.shared_key[:30])
-        print("Bob sifted key (trunc):       ", self.classical_channel.bob_key[:30])
+        print(f"Alice sifted key ({adjusted_length} bits):     ", self.shared_key[:adjusted_length])
+        print(f"Bob sifted key ({adjusted_length} bits):       ", self.classical_channel.bob_key[:adjusted_length])
         corrected = ec.correct(self.shared_key[:adjusted_length], self.classical_channel.bob_key[:adjusted_length])
-        print("Corrected Bob key (trunc):    ", corrected[:30])
+        print(f"Corrected Bob key ({adjusted_length} bits):    ", corrected[:adjusted_length])
 
         alice_hash = hashlib.sha256(bytes(self.shared_key[:adjusted_length])).hexdigest()[:12]
         bob_hash = hashlib.sha256(bytes(corrected)).hexdigest()[:12]
