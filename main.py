@@ -51,6 +51,21 @@ def main():
         sim.estimate_error_from_sample()
         
         sim.show_results()
+
+        print("\n=== ONE-TIME PAD ENCRYPTION ===")
+        use_message = input("Do you want to send the message using the final key? (y/n): ").strip().lower()
+        if use_message == 'y':
+            from bb84.messenger import Messenger
+            messenger = Messenger(sim.final_key)
+            encrypted, decrypted = messenger.send_message_with_message(message)
+            if encrypted is None:
+                print("❌ Error: Final key too short for message encryption.")
+            else:
+                print(f"Encrypted message: {encrypted}")
+                print(f"Decrypted message (Bob): {decrypted}")
+        else:
+            print("Message transmission aborted.")
+
         
         
 
@@ -65,15 +80,7 @@ def main():
         else:
             print("\n✅ Simulation successful and within error threshold.")
 
-        if sim.shared_key is not None and len(sim.shared_key) >= required_key_bits:
-            use_message = input("\nDo you want to send the message using the final key? (y/n): ").strip().lower()
-            if use_message == 'y':
-                messenger = Messenger(sim.shared_key[:required_key_bits])
-                messenger.send_message_with_message(message)
-            else:
-                print("Message transmission aborted.")
-        else:
-            print("Error: Final key too short for encryption.")
+        
         break
 
 if __name__ == "__main__":

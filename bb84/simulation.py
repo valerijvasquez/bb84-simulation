@@ -1,3 +1,4 @@
+
 import numpy as np
 import hashlib
 
@@ -61,13 +62,11 @@ class BB84Simulation:
             alice_key=self.shared_key
         )
 
-        # Discard sample bits from keys
         self.shared_key = [bit for i, bit in enumerate(self.shared_key) if i not in indices]
         self.classical_channel.bob_key = [bit for i, bit in enumerate(self.classical_channel.bob_key) if i not in indices]
 
     def show_results(self):
         print("\n=== RESULTS ===")
-        # 1. Bits and bases
         print("Alice bits:       ", self.alice.bits)
         print("Alice bases:      ", self.alice.bases)
         if self.eve:
@@ -79,7 +78,6 @@ class BB84Simulation:
         print(f"Channel lost qubits: {self.quantum_channel.loss_count}")
         print(f"Channel flipped qubits: {self.quantum_channel.flip_count}")
 
-        # 2. Error estimation
         if self.sample_indices is not None:
             print("\n=== ERROR ESTIMATION ===")
             print(f"Used {len(self.sample_indices)} bits ({round(100 * len(self.sample_indices) / (len(self.shared_key) + len(self.sample_indices)), 1)}%) of key for error estimation.")
@@ -100,11 +98,11 @@ class BB84Simulation:
         bob_hash = hashlib.sha256(bytes(corrected)).hexdigest()[:12]
         print(f"Hash (Alice): {alice_hash}")
         print(f"Hash (Corrected Bob): {bob_hash}")
-        
+
         if alice_hash == bob_hash:
             print("✅ ECC SUCCESS: keys match.")
 
-            # Privacy Amplification
+            # 4. Privacy Amplification
             from .privacy_amplification import PrivacyAmplifier
 
             print("\n=== PRIVACY AMPLIFICATION ===")
@@ -116,9 +114,7 @@ class BB84Simulation:
                 print("No message found. Defaulting to 40-bit final key.")
 
             amplifier = PrivacyAmplifier(output_bits=required_bits)
-            final_key = amplifier.apply(corrected)
-            amplifier = PrivacyAmplifier(output_bits=required_bits)
-            final_key = amplifier.apply(corrected)
+            self.final_key = amplifier.apply(corrected)
 
             shake = hashlib.shake_256()
             padded_len = ((len(corrected) + 7) // 8) * 8
@@ -132,11 +128,10 @@ class BB84Simulation:
             print(f"Hash function used: SHAKE-256")
             print(f"Seed used (hex): {amplifier.seed.hex()}")
             print("Hashed key (hex):", digest.hex())
-            print(f"Hashed key (binary, {required_bits} bits):", final_key)
+            print(f"Hashed key (binary, {required_bits} bits):", self.final_key)
 
+
+          
 
         else:
             print("❌ ECC FAILED: keys differ.")
-
-
-

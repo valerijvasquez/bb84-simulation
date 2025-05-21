@@ -1,3 +1,4 @@
+
 class Messenger:
     def __init__(self, key_bits):
         self.key = self._prepare_key(key_bits)
@@ -13,11 +14,8 @@ class Messenger:
         message_bytes = message.encode('utf-8')
 
         if len(self.key) < len(message_bytes):
-            print("Error: key too short for message length.")
-            return
+            return None, None  # Key too short
 
         encrypted = bytes([m ^ k for m, k in zip(message_bytes, self.key)])
-        print(f"\nEncrypted message: {encrypted}")
-
         decrypted = bytes([e ^ k for e, k in zip(encrypted, self.key)])
-        print(f"Decrypted message (Bob): {decrypted.decode('utf-8', errors='ignore')}")
+        return encrypted, decrypted.decode('utf-8', errors='ignore')
