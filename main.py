@@ -50,8 +50,27 @@ def main():
         sim.run()
         
         sim.estimate_error_from_sample()
-        
+
+        if sim.error_rate is not None and sim.error_rate > error_threshold:
+            print(f"\n⚠️  ERROR RATE TOO HIGH ({round(sim.error_rate * 100, 2)}%) > THRESHOLD ({error_threshold * 100}%)")
+            retry = input("Do you want to try a new channel? (y/n): ").strip().lower()
+            if retry != 'y':
+                print("Aborting simulation.")
+                break
+            else:
+                continue
+
         sim.show_results()
+        
+        if not hasattr(sim, 'final_key') or sim.final_key is None:
+            print("No usable final key. ECC failed or key was too short.")
+            retry = input("Do you want to try a new channel? (y/n): ").strip().lower()
+            if retry != 'y':
+                print("Aborting simulation.")
+                break
+            else:
+                continue
+
 
         print("\n=== ONE-TIME PAD ENCRYPTION ===")
         use_message = input("Do you want to send the message using the final key? (y/n): ").strip().lower()
@@ -67,25 +86,13 @@ def main():
         else:
             print("Message transmission aborted.")
 
-        
-        
-
-        if sim.error_rate is not None and sim.error_rate > error_threshold:
-            print(f"\n⚠️  ERROR RATE TOO HIGH ({round(sim.error_rate * 100, 2)}%) > THRESHOLD ({error_threshold * 100}%)")
-            retry = input("Do you want to try a new channel? (y/n): ").strip().lower()
-            if retry != 'y':
-                print("Aborting simulation.")
-                break
-            else:
-                continue
-        else:
-            print("\n✅ Simulation successful and within error threshold.")
-
-        
+        print("\n✅ Simulation successful and within error threshold.")
         break
+
 
 if __name__ == "__main__":
     main()
+
 
 
 

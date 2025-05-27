@@ -21,15 +21,6 @@ class QubitSender:
         self.bits = np.random.choice(bits, self.key_length)
         self.bases = np.random.choice(bases, self.key_length)
 
-    def encode_qubits(self):
-        states = []
-        for bit, basis in zip(self.bits, self.bases):
-            if basis == '+':
-                state = ket_0 if bit == 0 else ket_1
-            else:
-                state = ket_plus if bit == 0 else ket_minus
-            states.append((state, basis))
-        self.encoded_qubits = states
 
     def choose_sample_indices(self, key_length, fraction=0.2):
         indices = sorted(np.random.choice(key_length, int(fraction * key_length), replace=False))

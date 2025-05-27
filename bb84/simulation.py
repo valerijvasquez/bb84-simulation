@@ -1,4 +1,3 @@
-
 import numpy as np
 import hashlib
 
@@ -28,12 +27,10 @@ class BB84Simulation:
 
     def run(self):
         self.alice = QubitSender(self.key_length)
-        self.bob = QubitReceiver(self.key_length)
+        self.bob = QubitReceiver()
         self.eve = Eavesdropper(self.eve_fraction) if self.use_eve else None
 
         self.alice.prepare_qubits()
-        self.alice.encode_qubits()
-        self.bob.choose_bases()
 
         self.quantum_channel = QuantumChannel(
             flip_probability=self.flip_probability,
@@ -42,11 +39,15 @@ class BB84Simulation:
         )
 
         transmitted_states = []
-        for i, (state, _) in enumerate(self.alice.encoded_qubits):
+        for i in range(self.key_length):
+            state = self.alice.encode_single_qubit(i)
             transmitted = self.quantum_channel.transmit(state, i)
             transmitted_states.append(transmitted)
 
-        self.bob.receive_qubits(transmitted_states)
+
+        for i, state in enumerate(transmitted_states):
+            self.bob.receive_single_qubit(state, i)
+
 
         self.classical_channel = ClassicalChannel(self.alice, self.bob)
         self.shared_key = self.classical_channel.reconcile()
@@ -92,6 +93,11 @@ class BB84Simulation:
         print(f"Alice sifted key ({adjusted_length} bits):     ", self.shared_key[:adjusted_length])
         print(f"Bob sifted key ({adjusted_length} bits):       ", self.classical_channel.bob_key[:adjusted_length])
         corrected = ec.correct(self.shared_key[:adjusted_length], self.classical_channel.bob_key[:adjusted_length])
+        if corrected is None:
+            print("❌ ECC FAILED: mismatched or invalid input for correction.")
+            self.final_key = None  
+            return
+
         print(f"Corrected Bob key ({adjusted_length} bits):    ", corrected[:adjusted_length])
 
         alice_hash = hashlib.sha256(bytes(self.shared_key[:adjusted_length])).hexdigest()[:12]
