@@ -22,8 +22,9 @@ class QubitReceiver:
 
         if basis == '+':
             bit = 0 if np.allclose(state, ket_0) else 1
-        else:
+        elif basis == 'x':
             bit = 0 if np.allclose(state, ket_plus) else 1
+
 
         self.measured_bits.append(bit)
 

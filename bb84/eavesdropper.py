@@ -26,12 +26,14 @@ class Eavesdropper:
 
     def measure(self, state, basis):
         if basis == 'x':
-            return 0 if np.allclose(state, ket_0) or np.allclose(state, ket_plus) else 1
-        else:
-            return 0 if np.allclose(state, ket_0) or np.allclose(state, ket_1) else 1
+            return 0 if np.allclose(state, ket_plus) else 1
+        elif basis == '+':
+            return 0 if np.allclose(state, ket_0) else 1
+
 
     def encode(self, bit, basis):
         if basis == 'x':
-            return ket_0 if bit == 0 else ket_1
-        else:
             return ket_plus if bit == 0 else ket_minus
+        elif basis == '+':
+            return ket_0 if bit == 0 else ket_1
+

@@ -5,10 +5,11 @@ class QubitSender:
     def encode_single_qubit(self, index):
         bit = self.bits[index]
         basis = self.bases[index]
-        if basis == 'Z':
+        if basis == '+':
             return ket_0 if bit == 0 else ket_1
-        else:
+        elif basis == 'x':
             return ket_plus if bit == 0 else ket_minus
+
 
     def __init__(self, key_length):
         self.key_length = key_length
