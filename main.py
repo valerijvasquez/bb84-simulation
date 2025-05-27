@@ -7,7 +7,8 @@ Created on Wed May 14 11:37:09 2025
 """
 
 from bb84.simulation import BB84Simulation
-from bb84.messenger import Messenger
+from bb84.otp import OneTimePad
+
 
 def main():
     print("\n--- BB84 Quantum Key Distribution Simulation ---")
@@ -55,12 +56,12 @@ def main():
         print("\n=== ONE-TIME PAD ENCRYPTION ===")
         use_message = input("Do you want to send the message using the final key? (y/n): ").strip().lower()
         if use_message == 'y':
-            from bb84.messenger import Messenger
-            messenger = Messenger(sim.final_key)
-            encrypted, decrypted = messenger.send_message_with_message(message)
+            otp = OneTimePad(sim.final_key)
+            encrypted = otp.encrypt(message)
             if encrypted is None:
                 print("❌ Error: Final key too short for message encryption.")
             else:
+                decrypted = otp.decrypt(encrypted)
                 print(f"Encrypted message: {encrypted}")
                 print(f"Decrypted message (Bob): {decrypted}")
         else:
