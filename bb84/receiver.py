@@ -34,7 +34,7 @@ class QubitReceiver:
             index (int): Index of the qubit in the sequence.
         """
         basis = np.random.choice(bases)
-        self.bases.append(basis)
+        self.bases.append(str(basis))
         self.received_states.append(state)
 
         if state is None:
@@ -46,7 +46,7 @@ class QubitReceiver:
         elif basis == 'x':
             bit = 0 if np.allclose(state, ket_plus) else 1
 
-        self.measured_bits.append(bit)
+        self.measured_bits.append(int(bit))
 
     def reconcile_with(self, alice_bases):
         """
@@ -59,7 +59,7 @@ class QubitReceiver:
             np.ndarray: Bob's key bits from matched basis positions.
         """
         matching_indices = np.where(self.bases == alice_bases)[0]
-        self.reconciled_key = np.array(self.measured_bits)[matching_indices]
+        self.reconciled_key = [int(self.measured_bits[i]) for i in matching_indices]
         return self.reconciled_key
 
     def receive_sample_indices(self, indices):

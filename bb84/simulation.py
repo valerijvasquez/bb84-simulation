@@ -86,8 +86,9 @@ class BB84Simulation:
             alice_key=self.shared_key
         )
 
-        self.shared_key = [bit for i, bit in enumerate(self.shared_key) if i not in indices]
-        self.classical_channel.bob_key = [bit for i, bit in enumerate(self.classical_channel.bob_key) if i not in indices]
+        self.shared_key = [int(bit) for i, bit in enumerate(self.shared_key) if i not in indices]
+        self.classical_channel.bob_key = [int(bit) for i, bit in enumerate(self.classical_channel.bob_key) if i not in indices]
+
 
     def show_results(self):
         """
@@ -127,6 +128,9 @@ class BB84Simulation:
             self.final_key = None
             return
 
+        
+        corrected = [int(b) for b in corrected]
+        self.shared_key = [int(b) for b in self.shared_key]
         print(f"Corrected Bob key ({adjusted_length} bits):", corrected[:adjusted_length])
         alice_hash = hashlib.sha256(bytes(self.shared_key[:adjusted_length])).hexdigest()[:12]
         bob_hash = hashlib.sha256(bytes(corrected)).hexdigest()[:12]

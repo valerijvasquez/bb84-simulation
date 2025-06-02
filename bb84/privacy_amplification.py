@@ -33,6 +33,8 @@ class PrivacyAmplifier:
         Returns:
             list: Truncated and hashed output key as a list of bits.
         """
+        key_bits = [int(b) for b in key_bits]
+
         # Pad key_bits to ensure its length is divisible by 8
         padded_len = ((len(key_bits) + 7) // 8) * 8
         padded_bits = key_bits + [0] * (padded_len - len(key_bits))

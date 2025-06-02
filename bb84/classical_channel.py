@@ -39,8 +39,8 @@ class ClassicalChannel:
             self.alice.bits, self.alice.bases, self.bob.bases, self.bob.measured_bits
         ):
             if a_base == b_base and b_bit is not None:
-                alice_key.append(a_bit)
-                bob_key.append(b_bit)
+                alice_key.append(int(a_bit))
+                bob_key.append(int(b_bit))
 
         self.bob_key = bob_key
         self.alice.reconciled_key = alice_key
