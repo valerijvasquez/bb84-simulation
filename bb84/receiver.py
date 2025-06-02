@@ -1,5 +1,5 @@
 import numpy as np
-from .globals import ket_0, ket_1, ket_plus, ket_minus, bases
+from .globals import ket_0, ket_1, ket_plus, ket_minus, bases, identity, hadamard
 
 class QubitReceiver:
     """
@@ -41,10 +41,13 @@ class QubitReceiver:
             self.measured_bits.append(None)
             return
 
-        if basis == '+':
-            bit = 0 if np.allclose(state, ket_0) else 1
-        elif basis == 'x':
-            bit = 0 if np.allclose(state, ket_plus) else 1
+        # Rotate state into standard basis for measurment
+        rotation = identity if basis == '+' else hadamard
+        rotated = rotation @ state
+
+        prob_0 = abs(rotated[0])**2
+        prob_1 = abs(rotated[1])**2
+        bit = np.random.choice([0, 1], p=[prob_0, prob_1])
 
         self.measured_bits.append(int(bit))
 

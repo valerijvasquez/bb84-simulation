@@ -16,3 +16,8 @@ ket_minus = (1 / np.sqrt(2)) * (ket_0 - ket_1)
 bits = [0, 1]
 bases = ['+', 'x']
 
+# Basis rotation matrices for measurment simulation, identity for "+" basis, hadamard for "x basis".
+identity = np.eye(2)
+hadamard = (1 / np.sqrt(2)) * np.array([[1, 1],
+                                        [1, -1]])
+
