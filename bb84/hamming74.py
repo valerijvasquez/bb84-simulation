@@ -6,10 +6,14 @@ class Hamming74:
 
     def run(self, alice_key, bob_key):
         corrected = self.correct(bob_key, alice_key)
+        print("\nHamming74 finished: checking key consistency via hash.")
         if corrected:
+            print("Hamming74 attempt successful: all blocks corrected.")
             return "SUCCESS", corrected
         else:
-            return "FAIL", None
+            print("Hamming74 attempt failed: key mismatch detected.")
+            return "FAILURE", None
+
 
     def correct(self, bob_bits, reference):
         length = (min(len(bob_bits), len(reference)) // 4) * 4

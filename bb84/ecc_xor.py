@@ -149,9 +149,13 @@ class ECCXOR:
     
     def run(self, alice_key, bob_key):
         corrected = self.correct(alice_key, bob_key)
+        print("\nECCXOR finished: checking key consistency via hash.")
         if corrected:
+            print("ECCXOR attempt successful: all blocks corrected.")
             return "SUCCESS", corrected
         else:
-            return "FAIL", None
+            print("ECCXOR attempt failed: key mismatch detected.")
+            return "FAILURE", None
+
 
 

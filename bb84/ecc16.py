@@ -6,7 +6,6 @@ class ECC16:
         self.failed_blocks = 0
 
     def run(self, alice_key, bob_key):
-        print("\n=== Information reconciliation: running ECC16 ===")
 
         key_len = len(alice_key)
         truncate_len = (key_len // 7) * 7
@@ -37,10 +36,12 @@ class ECC16:
         self.corrected_key = corrected_blocks
         self.failed_blocks = failed_blocks
 
-        print(f"ECC16 finished: {failed_blocks} blocks failed.")
+        print(f"\nECC16 finished: {failed_blocks} blocks failed to be corrected.")
         if failed_blocks == 0:
+            print("ECC16 attempt succesful: all blocks corrected")
             return "SUCCESS", corrected_blocks
         else:
+            print("ECC16 attempt failed: some blocks could not be corrected")
             return "FAILURE", corrected_blocks
 
     def _generate_codeword(self, x1, x2, x3, s):

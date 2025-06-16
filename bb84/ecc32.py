@@ -7,7 +7,6 @@ class ECC32:
         self.failed_blocks = 0
 
     def run(self, alice_key, bob_key):
-        print("\n=== Information reconciliation: running ECC32 ===")
 
         key_len = len(alice_key)
         truncate_len = (key_len // 31) * 31
@@ -36,11 +35,14 @@ class ECC32:
         self.corrected_key = corrected_blocks
         self.failed_blocks = failed_blocks
 
-        print(f"ECC32 finished: {failed_blocks} blocks failed.")
+        print(f"\nECC32 finished: {failed_blocks} blocks failed to be corrected.")
         if failed_blocks == 0:
+            print("ECC32 attempt successful: all blocks corrected.")
             return "SUCCESS", corrected_blocks
         else:
+            print("ECC32 attempt failed: some blocks could not be corrected.")
             return "FAILURE", corrected_blocks
+
 
     def _generate_codeword(self, x1, x2, x3, x4, x5, s):
         p = [

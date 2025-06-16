@@ -105,8 +105,7 @@ class Cascade:
 
 
 
-    def run_full_cascade(self, num_global_rounds=3):
-        print("\n=== Running Cascade ===")
+    def run_full_cascade(self, num_global_rounds=6):
 
         self.parity_counter = 0  # Reset parity counter at start
 
