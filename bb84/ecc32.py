@@ -79,11 +79,43 @@ class ECC32:
         return [x1, x2, x3, x4, x5] + p
 
     def _find_rule_for_alice_block(self, block):
-        x1, x2, x3, x4, x5 = block[:5]
-        for s in range(2**26):
-            if self._generate_codeword(x1, x2, x3, x4, x5, s) == block:
-                return s
-        return None
+        x = block[:5]
+        p = [
+            x[0] ^ x[1],
+            x[0] ^ x[2],
+            x[0] ^ x[3],
+            x[0] ^ x[4],
+            x[1] ^ x[2],
+            x[1] ^ x[3],
+            x[1] ^ x[4],
+            x[2] ^ x[3],
+            x[2] ^ x[4],
+            x[3] ^ x[4],
+            x[0] ^ x[1] ^ x[2],
+            x[0] ^ x[1] ^ x[3],
+            x[0] ^ x[1] ^ x[4],
+            x[0] ^ x[2] ^ x[3],
+            x[0] ^ x[2] ^ x[4],
+            x[0] ^ x[3] ^ x[4],
+            x[1] ^ x[2] ^ x[3],
+            x[1] ^ x[2] ^ x[4],
+            x[1] ^ x[3] ^ x[4],
+            x[2] ^ x[3] ^ x[4],
+            x[0] ^ x[1] ^ x[2] ^ x[3],
+            x[0] ^ x[1] ^ x[2] ^ x[4],
+            x[0] ^ x[1] ^ x[3] ^ x[4],
+            x[0] ^ x[2] ^ x[3] ^ x[4],
+            x[1] ^ x[2] ^ x[3] ^ x[4],
+            x[0] ^ x[1] ^ x[2] ^ x[3] ^ x[4]
+        ]
+
+        parity_bits = block[5:]
+        s_bits = [p[i] ^ parity_bits[i] for i in range(26)]
+
+        # Convert list of bits to integer
+        s = sum((bit << i) for i, bit in enumerate(s_bits))
+        return s
+
 
     def _correct_bob_block(self, bob_block, s):
         min_dist = 32
@@ -95,7 +127,4 @@ class ECC32:
                 min_dist = dist
                 best = candidate
         return best
-
-
-
 
