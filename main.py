@@ -1,18 +1,33 @@
 from bb84.simulation import BB84Simulation
+from bb84.ecc16 import ECC16
+from bb84.ecc32 import ECC32
+from bb84.ecc_xor import ECCXOR
+from bb84.hamming74 import Hamming74
+from bb84.cascade import Cascade
 from bb84.otp import OneTimePad
+from bb84.globals import binary_entropy
 
 def main():
     print("\n--- BB84 quantum key distribution simulation ---")
+    # ECC selection menu
+    ecc_options = {
+        "xor": ECCXOR(),
+        "hamming": Hamming74(),
+        "ecc16": ECC16(),
+        "ecc32": ECC32(),
+        "cascade": Cascade()
+    }
 
-    message = input("Enter the message to send: ").strip()
-    message_bytes = message.encode('utf-8')
-    required_key_bits = len(message_bytes) * 8
-    print(f"Message requires {required_key_bits} bits of key for one-time pad encryption.")
+    print("\nAvailable ECCs:")
+    for name in ecc_options:
+        print(f" - {name}")
+    ecc_choice = input("Select ECC: ").strip().lower()
+    ecc = ecc_options.get(ecc_choice)
+    if ecc is None:
+        raise ValueError("Invalid ECC selected.")
 
-    estimated_efficiency = 0.25
-    key_length = int(required_key_bits / estimated_efficiency)
-    print(f"Estimated number of qubits to send: {key_length}")
 
+    # Ask for parameters first
     use_eve = input("Include eavesdropping? (y/n): ").strip().lower() == 'y'
     eve_fraction = 0.0
     if use_eve:
@@ -20,63 +35,85 @@ def main():
 
     flip_probability = float(input("Bit flip probability (0.0 to 1.0): "))
     loss_probability = float(input("Qubit loss probability (0.0 to 1.0): "))
-    error_threshold = float(input("Set error rate threshold for accepting the key (e.g., 0.1): "))
 
-    while True:
-        sim = BB84Simulation(
-            key_length=key_length,
-            use_eve=use_eve,
-            eve_fraction=eve_fraction,
-            flip_probability=flip_probability,
-            loss_probability=loss_probability
-        )
+    practical_efficiency_factor = 1.2
 
-        sim.message = message
-        sim.run()
-        sim.estimate_error_from_sample()
+    # === Probe transmission ===
+    probe_qubits = 100
+    print(f"\nSending {probe_qubits} qubits through quantum channel to estimate error.")
 
-        if sim.error_rate is not None and sim.error_rate > error_threshold:
-            print(f"\nError rate too high ({round(sim.error_rate * 100, 2)}%) exceeds threshold ({error_threshold * 100}%).")
-            retry = input("Try a new channel? (y/n): ").strip().lower()
-            if retry != 'y':
-                print("Aborting simulation.")
-                break
-            else:
-                continue
+    sim = BB84Simulation(
+        key_length=probe_qubits,
+        use_eve=use_eve,
+        eve_fraction=eve_fraction,
+        flip_probability=flip_probability,
+        loss_probability=loss_probability,
+        ecc=ecc   
+    )
 
-        sim.show_results()
+    sim.run()
+    sim.estimate_error_from_sample(sample_fraction=1.0)
 
-        if not hasattr(sim, 'final_key') or sim.final_key is None:
-            print("No usable final key. ECC failed or key was too short.")
-            retry = input("Try a new channel? (y/n): ").strip().lower()
-            if retry != 'y':
-                print("Aborting simulation.")
-                break
-            else:
-                continue
+    # Efficiency estimation
+    usable_fraction = 1 - binary_entropy(sim.error_rate)
+    estimated_efficiency = usable_fraction / practical_efficiency_factor
 
-        print("\n--- One-time pad encryption ---")
-        use_message = input("Send the message using the final key? (y/n): ").strip().lower()
-        if use_message == 'y':
-            otp = OneTimePad(sim.final_key)
-            encrypted = otp.encrypt(message)
-            if encrypted is None:
-                print("Final key too short for encryption.")
-            else:
-                decrypted = otp.decrypt(encrypted)
-                print("Encrypted message:", encrypted)
-                print("Decrypted message (Bob):", decrypted)
+    print(f"\n=== Efficiency estimation ===")
+    print(f"Error rate: {round(sim.error_rate * 100, 2)}%")
+    print(f"Estimated efficiency after reconciliation: {round(estimated_efficiency * 100, 2)}%")
+
+    # Ask user whether to proceed with full run
+    proceed = input("Do you want to proceed with full message transmission based on this efficiency? (y/n): ").strip().lower()
+    if proceed != 'y':
+        print("Aborting simulation.")
+        return
+
+    # === Now ask for message ===
+    message = input("\nEnter the message to send: ").strip()
+    message_bytes = message.encode('utf-8')
+    required_key_bits = len(message_bytes) * 8
+    print(f"Message requires {required_key_bits} bits for OTP encryption.")
+
+    # Compute how many qubits to send
+    sifted_key_needed = required_key_bits
+    raw_qubits_needed = sifted_key_needed / (estimated_efficiency * 0.5)
+    key_length = int(raw_qubits_needed)
+
+    print(f"\nAdjusted number of qubits to send: {key_length}")
+
+    # === Full run ===
+    sim = BB84Simulation(
+        key_length=key_length,
+        use_eve=use_eve,
+        eve_fraction=eve_fraction,
+        flip_probability=flip_probability,
+        loss_probability=loss_probability,
+        ecc=ecc,
+    )
+
+    sim.message = message
+    sim.run()
+    sim.show_results()
+
+    if not hasattr(sim, 'final_key') or sim.final_key is None:
+        print("No usable final key.")
+        return
+
+    print("\n--- One-time pad encryption ---")
+    use_message = input("Send the message using the final key? (y/n): ").strip().lower()
+    if use_message == 'y':
+        otp = OneTimePad(sim.final_key)
+        encrypted = otp.encrypt(message)
+        if encrypted is None:
+            print("Final key too short for encryption.")
         else:
-            print("Message transmission aborted.")
+            decrypted = otp.decrypt(encrypted)
+            print("Encrypted message:", encrypted)
+            print("Decrypted message (Bob):", decrypted)
+    else:
+        print("Message transmission aborted.")
 
-        print("Simulation complete and within error threshold.")
-        break
+    print("Simulation complete.")
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-

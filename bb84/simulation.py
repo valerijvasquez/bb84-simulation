@@ -6,7 +6,6 @@ from .receiver import QubitReceiver
 from .quantum_channel import QuantumChannel
 from .classical_channel import ClassicalChannel
 from .eavesdropper import Eavesdropper
-from .ecc import ErrorCorrector
 from .privacy_amplification import PrivacyAmplifier
 
 class BB84Simulation:
@@ -17,7 +16,7 @@ class BB84Simulation:
     """
 
     def __init__(self, key_length=20, use_eve=False, eve_fraction=1.0,
-                 flip_probability=0.0, loss_probability=0.0):
+                 flip_probability=0.0, loss_probability=0.0, ecc=None):
         """
         Initialize simulation parameters.
 
@@ -33,6 +32,8 @@ class BB84Simulation:
         self.eve_fraction = eve_fraction
         self.flip_probability = flip_probability
         self.loss_probability = loss_probability
+        self.ecc = ecc
+        
         self.alice = None
         self.bob = None
         self.eve = None
@@ -69,7 +70,7 @@ class BB84Simulation:
         self.classical_channel = ClassicalChannel(self.alice, self.bob)
         self.shared_key = self.classical_channel.reconcile_key()
 
-    def estimate_error_from_sample(self, fraction=0.2):
+    def estimate_error_from_sample(self, sample_fraction=0.2):
         """
         Perform error estimation using a random sample of the reconciled key.
 
@@ -77,7 +78,7 @@ class BB84Simulation:
             fraction (float): Fraction of the key to sample.
         """
         key_length = len(self.classical_channel.bob_key)
-        indices = self.alice.choose_sample_indices(key_length, fraction)
+        indices = self.alice.choose_sample_indices(key_length, sample_fraction)
         self.classical_channel.send_sample_indices_to_bob(indices)
         self.sample_indices = indices
 
@@ -89,6 +90,26 @@ class BB84Simulation:
         self.shared_key = [int(bit) for i, bit in enumerate(self.shared_key) if i not in indices]
         self.classical_channel.bob_key = [int(bit) for i, bit in enumerate(self.classical_channel.bob_key) if i not in indices]
 
+    def run_ecc(self):
+        status, corrected_key = self.ecc.run(
+            alice_key=self.shared_key,
+            bob_key=self.classical_channel.bob_key
+        )
+
+        if status == "SUCCESS":
+            print(f"{self.ecc.__class__.__name__} succeeded.")
+            self.shared_key = corrected_key
+            self.final_key = corrected_key 
+            return True
+        else:
+            print(f"{self.ecc.__class__.__name__} failed: aborting protocol.")
+            self.final_key = None         
+            return False
+
+
+
+
+
 
     def show_results(self):
         """
@@ -96,14 +117,15 @@ class BB84Simulation:
         final key hash, and privacy amplification results.
         """
         print("\n=== Results ===")
-        print("Alice bits:", self.alice.bits)
-        print("Alice bases:", self.alice.bases)
+        print("Alice bits:", self.alice.bits[:10], "...")
+        print("Alice bases:", self.alice.bases[:10], "...")
         if self.eve:
-            print("Eve bases:", self.eve.bases)
-            print("Eve bits:", self.eve.intercepted_bits)
-        print("Bob bases:", self.bob.bases)
-        print("Bob measurements:", self.bob.measured_bits)
-        print("Reconciled key:", self.shared_key)
+            print("Eve bases:", list(self.eve.bases.items())[:10], "...")
+            print("Eve bits:", list(self.eve.intercepted_bits.items())[:10], "...")
+        print("Bob bases:", self.bob.bases[:10], "...")
+        print("Bob measurements:", self.bob.measured_bits[:10], "...")
+        print("Reconciled key:", self.shared_key[:10], "...")
+        print(f"Reconciled key length: {len(self.shared_key)} bits")
         print(f"Channel lost qubits: {self.quantum_channel.loss_count}")
         print(f"Channel flipped qubits: {self.quantum_channel.flip_count}")
 
@@ -115,54 +137,34 @@ class BB84Simulation:
             print(f"Remaining key length after discarding sample: {len(self.shared_key)} bits")
             print(f"Sampled error rate: {round(self.error_rate * 100, 2)}%")
 
-        ec = ErrorCorrector()
-        print("\n=== Error correction ===")
-        adjusted_length = len(self.shared_key) - (len(self.shared_key) % 3)
-        print(f"Adjusted key length to multiple of 3: {adjusted_length}")
-        print(f"Alice sifted key ({adjusted_length} bits):", self.shared_key[:adjusted_length])
-        print(f"Bob sifted key ({adjusted_length} bits):", self.classical_channel.bob_key[:adjusted_length])
-
-        corrected = ec.correct(self.shared_key[:adjusted_length], self.classical_channel.bob_key[:adjusted_length])
-        if corrected is None:
-            print("ECC failed: more than one error per 3-bit chunk or hashes do not match.")
+        success = self.run_ecc()
+        if not success:
             self.final_key = None
             return
 
-        
-        corrected = [int(b) for b in corrected]
-        self.shared_key = [int(b) for b in self.shared_key]
-        print(f"Corrected Bob key ({adjusted_length} bits):", corrected[:adjusted_length])
-        alice_hash = hashlib.sha256(bytes(self.shared_key[:adjusted_length])).hexdigest()[:12]
-        bob_hash = hashlib.sha256(bytes(corrected)).hexdigest()[:12]
-        print(f"Hash (Alice): {alice_hash}")
-        print(f"Hash (Corrected Bob): {bob_hash}")
+        print("\n=== Privacy amplification ===")
 
-        if alice_hash == bob_hash:
-            print("ECC succeeded: keys match.")
-            print("\n=== Privacy amplification ===")
+        if hasattr(self, 'message') and self.message:
+            required_bits = len(self.message.encode()) * 8
+            print(f"Truncating reconciled key to {required_bits} bits for OTP encryption.")
 
-            if hasattr(self, 'message') and self.message:
-                required_bits = len(self.message.encode()) * 8
-                print(f"Message requires {required_bits} bits for OTP encryption.")
-            else:
-                required_bits = 40
-                print("No message found. Defaulting to 40-bit final key.")
-
-            amplifier = PrivacyAmplifier(output_bits=required_bits)
-            self.final_key = amplifier.apply(corrected)
-
-            shake = hashlib.shake_256()
-            padded_len = ((len(corrected) + 7) // 8) * 8
-            padded_bits = corrected + [0] * (padded_len - len(corrected))
-            bitstring = ''.join(str(b) for b in padded_bits)
-            key_bytes = int(bitstring, 2).to_bytes(padded_len // 8, byteorder='big')
-            shake.update(amplifier.seed + key_bytes)
-            digest = shake.digest(amplifier.output_bytes)
-            digest_bits = ''.join(f"{byte:08b}" for byte in digest)
-
-            print(f"Hash function used: SHAKE-256")
-            print(f"Seed used (hex): {amplifier.seed.hex()}")
-            print("Hashed key (hex):", digest.hex())
-            print(f"Hashed key (binary, {required_bits} bits):", self.final_key)
         else:
-            print("ECC failed: keys differ.")
+            required_bits = 40
+            print("No message found. Defaulting to 40-bit final key.")
+
+        amplifier = PrivacyAmplifier(output_bits=required_bits)
+        self.final_key = amplifier.apply(self.shared_key)
+
+        shake = hashlib.shake_256()
+        padded_len = ((len(self.shared_key) + 7) // 8) * 8
+        padded_bits = self.shared_key + [0] * (padded_len - len(self.shared_key))
+        bitstring = ''.join(str(b) for b in padded_bits)
+        key_bytes = int(bitstring, 2).to_bytes(padded_len // 8, byteorder='big')
+        shake.update(amplifier.seed + key_bytes)
+        digest = shake.digest(amplifier.output_bytes)
+        digest_bits = ''.join(f"{byte:08b}" for byte in digest)
+
+        print(f"Hash function used: SHAKE-256")
+        print(f"Seed used (hex): {amplifier.seed.hex()}")
+        print("Hashed key (hex):", digest.hex())
+        print(f"Hashed key (binary, {required_bits} bits):", self.final_key)

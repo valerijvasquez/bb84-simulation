@@ -2,22 +2,14 @@ import random
 import hashlib
 
 class Cascade:
-    def __init__(self, alice_key, bob_key, subset_fraction=0.1):
-        self.alice_key = alice_key
-        self.bob_key = bob_key
+    
+    def __init__(self, subset_fraction=0.1):
         self.subset_fraction = subset_fraction
-        self.parity_counter = 0
-        self.log = []
-
-        # Compute initial block size automatically:
-        key_len = len(self.alice_key)
-        self.initial_block_size = self.largest_power_of_two_leq(key_len // 2)
-
-        print(f"Initial block size selected: {self.initial_block_size}")
 
 
-    @staticmethod
-    def largest_power_of_two_leq(n):
+
+
+    def largest_power_of_two_leq(self, n):
 
         power = 1
         while power * 2 <= n:
@@ -166,6 +158,25 @@ class Cascade:
         else:
             print("Cascade FAILED: keys still differ.")
             return "FAILURE"
+        
+    def run(self, alice_key, bob_key):
+        self.alice_key = alice_key
+        self.bob_key = bob_key
+        self.parity_counter = 0
+        self.log = []
+
+        key_len = len(self.alice_key)
+        self.initial_block_size = self.largest_power_of_two_leq(key_len // 2)
+        print(f"Initial block size selected: {self.initial_block_size}")
+
+        result = self.run_full_cascade()
+
+        if result == "SUCCESS":
+            return "SUCCESS", self.bob_key
+        else:
+            return "FAILURE", None
+
+
 
 
 
