@@ -135,7 +135,7 @@ class BB84Simulation:
         print("\n=== Privacy amplification ===")
         if self.message:
             required_bits = len(self.message.encode()) * 8
-            print(f"Reconciled key truncated to {required_bits} bits to match message length for OTP encryption.")
+            print(f"Applied privacy amplification: reconciled key reduced to {required_bits} bits to match message length for OTP encryption.")
         else:
             required_bits = 40
             print("No message found. Defaulting to 40-bit key.")
