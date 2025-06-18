@@ -1,10 +1,9 @@
+import hashlib
 import itertools
-
 
 class ECC32:
     def __init__(self):
         self.corrected_key = []
-        self.failed_blocks = 0
 
     def run(self, alice_key, bob_key):
 
@@ -14,34 +13,40 @@ class ECC32:
         bob_key = bob_key[:truncate_len]
 
         corrected_blocks = []
-        failed_blocks = 0
 
         for i in range(0, truncate_len, 31):
-            a_block = alice_key[i:i+31]
-            b_block = bob_key[i:i+31]
+            alice_block = alice_key[i:i+31]
+            bob_block = bob_key[i:i+31]
 
-            s = self._find_rule_for_alice_block(a_block)
-            if s is None:
-                failed_blocks += 1
+    
+            try:
+                s = self._find_rule_for_alice_block(alice_block)
+            except ValueError:
+                corrected_blocks.extend(bob_block)
                 continue
 
-            corrected = self._correct_bob_block(b_block, s)
-            if sum(a != b for a, b in zip(corrected, a_block)) > 0:
-                failed_blocks += 1
-                continue
+            corrected_block = self._correct_bob_block(bob_block, s)
+            corrected_blocks.extend(corrected_block)
 
-            corrected_blocks.extend(corrected)
 
         self.corrected_key = corrected_blocks
-        self.failed_blocks = failed_blocks
 
-        print(f"\nECC32 finished: {failed_blocks} blocks failed to be corrected.")
-        if failed_blocks == 0:
-            print("ECC32 attempt successful: all blocks corrected.")
+        def hash_bits(bits):
+            return hashlib.sha256(bytes(bits)).hexdigest()
+
+        alice_hash = hash_bits(alice_key)
+        bob_hash = hash_bits(corrected_blocks)
+
+        print(f"Alice hash: {alice_hash[:10]}...")
+        print(f"Bob hash: {bob_hash[:10]}...")
+
+        if alice_hash == bob_hash:
+            print("ECC32 attempt successful: hashes match.")
             return "SUCCESS", corrected_blocks
         else:
-            print("ECC32 attempt failed: some blocks could not be corrected.")
+            print("ECC32 attempt failed: hashes do not match.")
             return "FAILURE", corrected_blocks
+
 
 
     def _generate_codeword(self, x1, x2, x3, x4, x5, s):

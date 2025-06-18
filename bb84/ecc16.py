@@ -1,3 +1,4 @@
+import hashlib
 import itertools
 
 class ECC16:
@@ -6,14 +7,12 @@ class ECC16:
         self.failed_blocks = 0
 
     def run(self, alice_key, bob_key):
-
         key_len = len(alice_key)
         truncate_len = (key_len // 7) * 7
         alice_key = alice_key[:truncate_len]
         bob_key = bob_key[:truncate_len]
 
         corrected_blocks = []
-        failed_blocks = 0
 
         for i in range(0, truncate_len, 7):
             alice_block = alice_key[i:i+7]
@@ -22,27 +21,32 @@ class ECC16:
             try:
                 s = self._find_rule_index_from_codeword(alice_block)
             except ValueError:
-                failed_blocks += 1
+                corrected_blocks.extend(bob_block)
                 continue
 
             corrected_block = self._correct_bob_codeword(bob_block, s)
-            dist = sum((a != b) for a, b in zip(corrected_block, alice_block))
-            if dist > 0:
-                failed_blocks += 1
-                continue
-
             corrected_blocks.extend(corrected_block)
 
         self.corrected_key = corrected_blocks
-        self.failed_blocks = failed_blocks
 
-        print(f"\nECC16 finished: {failed_blocks} blocks failed to be corrected.")
-        if failed_blocks == 0:
-            print("ECC16 attempt succesful: all blocks corrected")
+        def hash_bits(bits):
+            return hashlib.sha256(bytes(bits)).hexdigest()
+
+        print("\nECC16 finished.")
+        alice_hash = hash_bits(alice_key)
+        bob_hash = hash_bits(corrected_blocks)
+
+        print(f"Alice hash: {alice_hash[:10]}...")
+        print(f"Bob hash:   {bob_hash[:10]}...")
+
+        if alice_hash == bob_hash:
+            print("ECC16 attempt successful: hashes match.")
             return "SUCCESS", corrected_blocks
         else:
-            print("ECC16 attempt failed: some blocks could not be corrected")
+            print("ECC16 attempt failed: hashes do not match.")
             return "FAILURE", corrected_blocks
+
+
 
     def _generate_codeword(self, x1, x2, x3, s):
         p = [
