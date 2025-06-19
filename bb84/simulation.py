@@ -13,8 +13,8 @@ from .hamming74 import Hamming74
 from .cascade import Cascade
 from .otp import OneTimePad
 
+
 class BB84Simulation:
-  
     def __init__(self, key_length=20, use_eve=False, eve_fraction=1.0,
                  flip_probability=0.0, loss_probability=0.0, ecc=None):
         self.key_length = key_length
@@ -25,7 +25,6 @@ class BB84Simulation:
         self.ecc = ecc
         self.message = None
 
-
     def run(self):
         self._prepare_parties()
         self._transmit_qubits()
@@ -35,7 +34,6 @@ class BB84Simulation:
         self._select_and_run_ecc()
         self._show_privacy_amplification()
         self._otp_encrypt()
-
 
     def _prepare_parties(self):
         self.alice = QubitSender(self.key_length)
@@ -48,7 +46,6 @@ class BB84Simulation:
             eavesdropper=self.eve
         )
 
-
     def _transmit_qubits(self):
         transmitted = [
             self.quantum_channel.transmit(self.alice.encode_single_qubit(i), i)
@@ -57,11 +54,9 @@ class BB84Simulation:
         for i, state in enumerate(transmitted):
             self.bob.receive_single_qubit(state, i)
 
-
     def _basis_reconciliation(self):
         self.classical_channel = ClassicalChannel(self.alice, self.bob)
         self.shared_key = self.classical_channel.reconcile_key()
-
 
     def _estimate_error(self):
         alice = self.alice.reconciled_key
@@ -74,7 +69,6 @@ class BB84Simulation:
         self.estimated_error_rate = errors / sample_size if sample_size else 0.0
         self.alice.reconciled_key = [bit for i, bit in enumerate(alice) if i not in self.sample_indices]
         self.bob.reconciled_key = [bit for i, bit in enumerate(bob) if i not in self.sample_indices]
-
 
     def _print_transmission_info(self):
         print("\n=== Transmission information ===")
@@ -97,7 +91,6 @@ class BB84Simulation:
         print(f"Used {sample_used} bits ({percent}%) of key for error estimation.")
         print(f"Estimated error rate: {round(self.estimated_error_rate * 100, 2)}%")
         print(f"Remaining key length after discarding sample: {len(self.alice.reconciled_key)} bits")
-
 
     def _select_and_run_ecc(self):
         print("\n=== Error correction ===")
@@ -128,7 +121,6 @@ class BB84Simulation:
             return
         self.final_key = corrected
 
-
     def _show_privacy_amplification(self):
         if not self.final_key:
             return
@@ -149,11 +141,10 @@ class BB84Simulation:
         byte_str = int(''.join(str(b) for b in padded), 2).to_bytes(padded_len // 8, 'big')
         shake.update(amplifier.seed + byte_str)
         digest = shake.digest(amplifier.output_bytes)
-        print(f"Hash function used: SHAKE-256")
+        print("Hash function used: SHAKE-256")
         print(f"Seed used (hex): {amplifier.seed.hex()}")
         print(f"Hashed key (hex): {digest.hex()}")
         print(f"Hashed key (binary, {required_bits} bits):", self.final_key)
-
 
     def _otp_encrypt(self):
         if not self.final_key or not self.message:

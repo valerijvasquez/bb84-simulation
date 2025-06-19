@@ -1,6 +1,7 @@
 import hashlib
 import itertools
 
+
 class ECC16:
     def __init__(self):
         self.corrected_key = []
@@ -46,8 +47,6 @@ class ECC16:
             print("ECC16 attempt failed: hashes do not match.")
             return "FAILURE", corrected_blocks
 
-
-
     def _generate_codeword(self, x1, x2, x3, s):
         p = [
             x1 ^ x2,
@@ -77,6 +76,3 @@ class ECC16:
                 min_dist = dist
                 best = candidate
         return best
-
-
-

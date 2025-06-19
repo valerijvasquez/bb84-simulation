@@ -1,12 +1,12 @@
 import hashlib
 import itertools
 
+
 class ECC32:
     def __init__(self):
         self.corrected_key = []
 
     def run(self, alice_key, bob_key):
-
         key_len = len(alice_key)
         truncate_len = (key_len // 31) * 31
         alice_key = alice_key[:truncate_len]
@@ -17,8 +17,6 @@ class ECC32:
         for i in range(0, truncate_len, 31):
             alice_block = alice_key[i:i+31]
             bob_block = bob_key[i:i+31]
-
-    
             try:
                 s = self._find_rule_for_alice_block(alice_block)
             except ValueError:
@@ -28,12 +26,11 @@ class ECC32:
             corrected_block = self._correct_bob_block(bob_block, s)
             corrected_blocks.extend(corrected_block)
 
-
         self.corrected_key = corrected_blocks
 
         def hash_bits(bits):
             return hashlib.sha256(bytes(bits)).hexdigest()
-
+        
         alice_hash = hash_bits(alice_key)
         bob_hash = hash_bits(corrected_blocks)
 
@@ -46,8 +43,6 @@ class ECC32:
         else:
             print("ECC32 attempt failed: hashes do not match.")
             return "FAILURE", corrected_blocks
-
-
 
     def _generate_codeword(self, x1, x2, x3, x4, x5, s):
         p = [
@@ -122,7 +117,6 @@ class ECC32:
         # Convert list of bits to integer
         s = sum((bit << i) for i, bit in enumerate(s_bits))
         return s
-
 
     def _correct_bob_block(self, bob_block, s):
         min_dist = 32

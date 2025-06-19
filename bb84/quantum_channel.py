@@ -1,28 +1,9 @@
 import numpy as np
 from .globals import ket_0, ket_1, ket_plus, ket_minus, identity, hadamard
 
+
 class QuantumChannel:
-    """
-    Models a quantum channel that can introduce qubit loss, bit flip noise,
-    and optional eavesdropping during transmission.
-    
-    Attributes:
-        flip_probability (float): Probability that a transmitted qubit is flipped.
-        loss_probability (float): Probability that a qubit is lost during transmission.
-        eavesdropper (Eavesdropper or None): Eve instance to optionally intercept qubits.
-        loss_count (int): Number of qubits lost so far.
-        flip_count (int): Number of qubits flipped so far.
-    """
-
     def __init__(self, flip_probability=0.0, loss_probability=0.0, eavesdropper=None):
-        """
-        Initialize the quantum channel.
-
-        Args:
-            flip_probability (float): Probability of a bit flip during transmission.
-            loss_probability (float): Probability of qubit loss during transmission.
-            eavesdropper (Eavesdropper, optional): Eve instance to intercept qubits.
-        """
         self.flip_probability = flip_probability
         self.loss_probability = loss_probability
         self.eavesdropper = eavesdropper
@@ -30,16 +11,6 @@ class QuantumChannel:
         self.flip_count = 0
 
     def transmit(self, state, position):
-        """
-        Simulate transmission of a qubit through the quantum channel.
-
-        Args:
-            state (np.ndarray): The qubit state to be transmitted.
-            position (int): Index of the qubit in the sequence.
-
-        Returns:
-            np.ndarray or None: The resulting qubit state, or None if lost.
-        """
         if np.random.rand() < self.loss_probability:
             self.loss_count += 1
             return None

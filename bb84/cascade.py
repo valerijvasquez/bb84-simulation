@@ -3,14 +3,11 @@ import hashlib
 
 class Cascade:
     
+    
     def __init__(self, subset_fraction=0.1):
         self.subset_fraction = subset_fraction
 
-
-
-
     def largest_power_of_two_leq(self, n):
-
         power = 1
         while power * 2 <= n:
             power *= 2
@@ -28,11 +25,8 @@ class Cascade:
             last_block = list(range(num_full_blocks * block_size, len(self.alice_key)))
             blocks.append(last_block)
             self.log.append(f"Remainder block of size {len(last_block)}")
-
         return blocks
     
-
-
     def get_parity(self, block_indices):
         self.parity_counter += 1
         return sum([self.alice_key[i] for i in block_indices]) % 2
@@ -50,7 +44,6 @@ class Cascade:
         self.log.append("Keys reshuffled\n")
 
     def check_hash_on_subset(self):
-        """Hash check on random subset of the key."""
         subset_size = max(1, int(self.subset_fraction * len(self.alice_key)))
         subset_indices = random.sample(range(len(self.alice_key)), subset_size)
 
@@ -65,7 +58,6 @@ class Cascade:
         return match
 
     def check_full_key_hash(self):
-        """Final full key hash comparison."""
         alice_bits = bytes(self.alice_key)
         bob_bits = bytes(self.bob_key)
 
@@ -76,10 +68,7 @@ class Cascade:
         self.log.append(f"FINAL FULL KEY HASH CHECK → {'PASS' if match else 'FAIL'}")
         return match
 
-
-    
     def binary_search_full(self, block_indices):
-        """Standard full binary search down to 1 bit"""
         if len(block_indices) == 1:
             i = block_indices[0]
             self.bob_key[i] ^= 1
@@ -93,7 +82,6 @@ class Cascade:
         alice_parity = self.get_parity(first_half)
         bob_parity = self.get_bob_parity(first_half)
 
-        # Each binary search step leaks 1 parity bit
         self.parity_counter += 1
 
         if alice_parity != bob_parity:
@@ -101,15 +89,10 @@ class Cascade:
         else:
             self.binary_search_full(second_half)
 
-
-
-
-
     def run_full_cascade(self, num_global_rounds=6):
 
-        self.parity_counter = 0  # Reset parity counter at start
+        self.parity_counter = 0  
 
-        # Define the stopping block size per global round
         stopping_block_sizes = [16, 8, 4, 4, 4, 2] 
 
         for global_round in range(1, num_global_rounds + 1):
@@ -118,7 +101,6 @@ class Cascade:
             current_block_size = self.initial_block_size
             round_num = 1
 
-            # Determine stopping block size for this global round
             min_block_size = stopping_block_sizes[global_round - 1]
 
             while current_block_size >= min_block_size:
@@ -137,20 +119,16 @@ class Cascade:
                         self.binary_search_full(block)
 
                 print(f"Block size {current_block_size}: {num_mismatches} mismatches corrected.")
-
-
                 print("Reshuffling keys...")
                 self.reshuffle_keys()
 
                 current_block_size = current_block_size // 2
                 round_num += 1
 
-            # After each global round → check subset hash
             if self.check_hash_on_subset():
                 print("Hash on subset OK. Terminating early.")
                 break
 
-        # Final full key hash check
         if self.check_full_key_hash():
             print("Cascade SUCCESS: keys match fully.")
             return "SUCCESS"
@@ -174,8 +152,3 @@ class Cascade:
             return "SUCCESS", self.bob_key
         else:
             return "FAILURE", None
-
-
-
-
-

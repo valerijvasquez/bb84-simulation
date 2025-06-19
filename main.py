@@ -1,5 +1,6 @@
 from bb84.simulation import BB84Simulation
 
+
 def main():
     print("\n--- BB84 quantum key distribution simulation ---")
 

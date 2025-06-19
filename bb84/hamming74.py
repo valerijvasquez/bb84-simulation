@@ -1,5 +1,6 @@
 import hashlib
 
+
 class Hamming74:
     def __init__(self):
         pass
@@ -13,7 +14,6 @@ class Hamming74:
         else:
             print("Hamming74 attempt failed: key mismatch detected.")
             return "FAILURE", None
-
 
     def correct(self, bob_bits, reference):
         length = (min(len(bob_bits), len(reference)) // 4) * 4
