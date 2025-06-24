@@ -79,15 +79,20 @@ class Cascade:
         first_half = block_indices[:mid]
         second_half = block_indices[mid:]
 
-        alice_parity = self.get_parity(first_half)
-        bob_parity = self.get_bob_parity(first_half)
-
+        alice_parity_first = self.get_parity(first_half)
+        bob_parity_first = self.get_bob_parity(first_half)
         self.parity_counter += 1
 
-        if alice_parity != bob_parity:
+        if alice_parity_first != bob_parity_first:
             self.binary_search_full(first_half)
+
         else:
-            self.binary_search_full(second_half)
+            alice_parity_second = self.get_parity(second_half)
+            bob_parity_second = self.get_bob_parity(second_half)
+            self.parity_counter += 1
+
+            if alice_parity_second != bob_parity_second:
+                self.binary_search_full(second_half)
 
     def run_full_cascade(self, num_global_rounds=6):
 
